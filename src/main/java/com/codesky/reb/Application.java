@@ -16,28 +16,32 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.ContextClosedEvent;
 
 @ComponentScan(basePackages = { "${reb.scan_base_packages}" })
-public class RebApplication implements CommandLineRunner, ApplicationListener<ApplicationEvent> {
+public class Application implements CommandLineRunner, ApplicationListener<ApplicationEvent> {
 
-	private final Logger logger = LoggerFactory.getLogger(RebApplication.class);
+	private final Logger logger = LoggerFactory.getLogger(Application.class);
 
 	private final Semaphore shutdownSignal = new Semaphore(1);
 
 	private final AtomicBoolean running = new AtomicBoolean(false);
-
+	
 	@Autowired
 	private MainLoop mainLoop;
 
 	@Autowired
 	private MsgLoop msgLoop;
+	
+	@Autowired
+	private Context context;
 
 	public static void main(String[] args) {
-		SpringApplication application = new SpringApplication(RebApplication.class);
+		SpringApplication application = new SpringApplication(Application.class);
 		application.setBannerMode(Banner.Mode.OFF);
 		application.run(args);
 	}
 
 	@Override
 	public void run(String... args) throws Exception {
+		context.init();
 		mainLoop.start();
 		msgLoop.start();
 
@@ -53,6 +57,7 @@ public class RebApplication implements CommandLineRunner, ApplicationListener<Ap
 		mainLoop.join();
 
 		logger.info("System has been shutdown!!!");
+		context.reset();
 		shutdownSignal.release();
 	}
 
