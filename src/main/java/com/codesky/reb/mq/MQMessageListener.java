@@ -18,6 +18,6 @@ package com.codesky.reb.mq;
 
 public interface MQMessageListener {
 
-	public boolean receive();
+	public boolean receive(byte[] msg);
 	
 }

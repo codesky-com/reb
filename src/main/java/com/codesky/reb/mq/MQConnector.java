@@ -16,16 +16,63 @@
 
 package com.codesky.reb.mq;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 @Component
-public class MQConnector {
-	
+public class MQConnector implements MQMessageListener {
+
+	private final Logger logger = LoggerFactory.getLogger(MQConnector.class);
+
 	@Value("${reb.mq.consumer.provider}")
 	private String consumerProvider;
-	
-	public void connect() {
+
+	@Value("${reb.mq.consumer.uri}")
+	private String consumerUri;
+
+	private MQConsumer consumer;
+
+	private MQConsumer newMqConsumer() {
+		Assert.notNull(consumerProvider, "");
+		Assert.notNull(consumerUri, "");
+
+		try {
+			Class<?> providerClazz = Class.forName(consumerProvider);
+			if (MQConsumer.class.isAssignableFrom(providerClazz)) {
+				MQConsumer instance = (MQConsumer) providerClazz.getDeclaredConstructor().newInstance();
+				if (instance.setup(consumerUri, this))
+					return instance;
+			}
+		} catch (Throwable e) {
+			logger.error(ExceptionUtils.getStackTrace(e));
+		}
+		return null;
 	}
-	
+
+	public void connect() {
+		if (consumer == null) {
+			consumer = newMqConsumer();
+		}
+
+		Assert.notNull(consumer, "");
+
+		consumer.start();
+	}
+
+	@Override
+	public boolean receive(byte[] msg) {
+		try {
+			String txt = new String(msg, "UTF-8");
+			System.out.println(txt);
+			return true;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+
 }

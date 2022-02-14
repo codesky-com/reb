@@ -17,6 +17,8 @@
 package com.codesky.reb.mq;
 
 public interface MQConsumer {
+	
+	public boolean setup(String uri, MQMessageListener listener);
 
 	public void start();
 	

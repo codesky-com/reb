@@ -16,8 +16,6 @@
 
 package com.codesky.reb.utils;
 
-import static org.junit.Assert.assertNotNull;
-
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -26,6 +24,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 @Component
 public class SpringUtils implements ApplicationContextAware {
@@ -35,18 +34,18 @@ public class SpringUtils implements ApplicationContextAware {
 	private final Logger logger = LoggerFactory.getLogger(SpringUtils.class);
 	
 	public final static <T> T getBean(Class<T> requireType) {
-		assertNotNull(appContext);
+		Assert.notNull(appContext, "");
 		return appContext.getBean(requireType);
 	}
 	
 	@SuppressWarnings("unchecked")
 	public final static <T> T getBean(String name) {
-		assertNotNull(appContext);
+		Assert.notNull(appContext, "");
 		return (T) appContext.getBean(name);
 	}
 	
 	public final static <T> Map<String, T> getBeansOfType(Class<T> type) {
-		assertNotNull(appContext);
+		Assert.notNull(appContext, "");
 		return appContext.getBeansOfType(type);
 	}
 
