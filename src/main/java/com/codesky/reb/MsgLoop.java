@@ -46,7 +46,6 @@ public class MsgLoop extends Thread {
 	@Override
 	public void run() {
 		logger.info("MainLoopThread running.");
-		
 		connector.connect();
 		
 		while (running.get()) {
@@ -58,6 +57,7 @@ public class MsgLoop extends Thread {
 			logger.info("MsgLoop");
 		}
 		
+		connector.close();
 		logger.info("MainLoopThread exit.");
 	}
 	

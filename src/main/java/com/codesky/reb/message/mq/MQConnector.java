@@ -44,7 +44,7 @@ public class MQConnector implements MQMessageListener {
 		return lastRecvTime.get();
 	}
 
-	private MQConsumer newMqConsumer() {
+	private MQConsumer newConsumer() {
 		Assert.notNull(consumerProvider, "");
 		Assert.notNull(consumerUri, "");
 
@@ -63,7 +63,7 @@ public class MQConnector implements MQMessageListener {
 
 	public void connect() {
 		if (consumer == null) {
-			consumer = newMqConsumer();
+			consumer = newConsumer();
 		}
 
 		Assert.notNull(consumer, "");
