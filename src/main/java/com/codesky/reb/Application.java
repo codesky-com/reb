@@ -81,13 +81,13 @@ public class Application implements CommandLineRunner, ApplicationListener<Appli
 	public void onApplicationEvent(ApplicationEvent event) {
 		try {
 			if (event instanceof ContextClosedEvent) {
-				// 设置关闭状态并且等待所有业务线程退出
+				// Set the shutdown state and wait for all business threads to exit.
 				if (running.compareAndSet(true, false)) {
-					// 阻塞ShutdownHook执行，等待业务退出完成信号。
+					// Block the execution of ShutdownHook and wait for the service exit completion signal.
 					shutdownSignal.acquire();
 				}
 			} else if (event instanceof ApplicationStartedEvent) {
-				// 设置运行状态Ï
+				// set running state
 				if (running.compareAndSet(false, true)) {
 					shutdownSignal.acquire();
 					logger.info("System started.");
