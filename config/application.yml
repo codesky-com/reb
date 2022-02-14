@@ -1,0 +1,9 @@
+reb:
+  scan_base_packages: com.codesky.reb
+
+  mq:
+    consumer:
+      provider: com.codesky.reb.mq.impl.RocketMQConsumer
+      name_server: kk-dev-server:9876
+      group: reb_dev
+      subscribe: test:*
