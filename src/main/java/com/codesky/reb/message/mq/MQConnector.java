@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.codesky.reb.mq;
+package com.codesky.reb.message.mq;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -35,6 +37,12 @@ public class MQConnector implements MQMessageListener {
 	private String consumerUri;
 
 	private MQConsumer consumer;
+	
+	private final AtomicLong lastRecvTime = new AtomicLong(0);
+	
+	public final long getLastRecvTime() {
+		return lastRecvTime.get();
+	}
 
 	private MQConsumer newMqConsumer() {
 		Assert.notNull(consumerProvider, "");
@@ -61,12 +69,29 @@ public class MQConnector implements MQMessageListener {
 		Assert.notNull(consumer, "");
 
 		consumer.start();
+		
+		lastRecvTime.set(System.currentTimeMillis());
+	}
+	
+	public void close() {
+		if (consumer != null) {
+			consumer.shutdown();
+		}
+		
+		consumer = null;
+	}
+	
+	public void reconnect() {
+		close();
+		connect();
 	}
 
 	@Override
-	public boolean receive(byte[] msg) {
+	public boolean receive(MQMessage msg) {
 		try {
-			String txt = new String(msg, "UTF-8");
+			lastRecvTime.set(System.currentTimeMillis());
+			
+			String txt = new String(msg.getBody(), "UTF-8");
 			System.out.println(txt);
 			return true;
 		} catch (Exception e) {

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codesky.reb.mq;
+package com.codesky.reb.message.mq;
 
 public interface MQConsumer {
 	
@@ -22,7 +22,7 @@ public interface MQConsumer {
 
 	public void start();
 	
-	public void stop();
+	public void shutdown();
 	
 	public void subscribe(String topic, String expr);
 	

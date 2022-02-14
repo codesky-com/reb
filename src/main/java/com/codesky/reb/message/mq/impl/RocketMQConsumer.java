@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.codesky.reb.mq.impl;
+package com.codesky.reb.message.mq.impl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,15 +38,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import com.codesky.reb.mq.MQConsumer;
-import com.codesky.reb.mq.MQMessageListener;
+import com.codesky.reb.message.mq.MQConsumer;
+import com.codesky.reb.message.mq.MQMessage;
+import com.codesky.reb.message.mq.MQMessageListener;
 
 public class RocketMQConsumer implements MQConsumer {
 
 	private final Logger logger = LoggerFactory.getLogger(RocketMQConsumer.class);
 
 	private DefaultMQPushConsumer consumer;
-	
+
 	@Override
 	public boolean setup(String uri, MQMessageListener listener) {
 		URI u = null;
@@ -56,7 +57,7 @@ public class RocketMQConsumer implements MQConsumer {
 			logger.error("URI={}", uri);
 			return false;
 		}
-		
+
 		if (!StringUtils.equals(u.getScheme().toLowerCase(), "rocketmq")) {
 			logger.error("'{}' scheme is not rocketmq.", u.getScheme());
 			return false;
@@ -68,15 +69,15 @@ public class RocketMQConsumer implements MQConsumer {
 			String[] kv = s.split("=");
 			parameters.put(kv[0].trim(), kv[1].trim());
 		});
-		
-		String[] checkExistParams = {"group_id", "topicTags"};
+
+		String[] checkExistParams = { "group_id", "topicTags" };
 		for (String item : checkExistParams) {
 			if (!parameters.containsKey(item)) {
 				logger.error("lost '{}' parameter.", item);
 				return false;
 			}
 		}
-		
+
 		Collection<String> topicTagSplits = Arrays.asList(parameters.get("topicTags").split(","));
 		Map<String, String> topicTags = new HashMap<String, String>(topicTagSplits.size());
 		topicTagSplits.forEach((s) -> {
@@ -84,13 +85,14 @@ public class RocketMQConsumer implements MQConsumer {
 			topicTags.put(kv[0].trim(), kv[1].trim());
 		});
 
-		boolean isOrderly = parameters.containsKey("orderly") ? BooleanUtils.toBoolean(parameters.get("orderly")) : true;
+		boolean isOrderly = parameters.containsKey("orderly") ? BooleanUtils.toBoolean(parameters.get("orderly"))
+				: true;
 
 		consumer = new DefaultMQPushConsumer(parameters.get("group_id"));
 		consumer.setNamesrvAddr(String.format("%s:%d", u.getHost(), u.getPort()));
 		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 		consumer.setConsumeMessageBatchMaxSize(1);
-		
+
 		if (isOrderly) {
 			consumer.registerMessageListener(new MessageListenerOrderly() {
 				@Override
@@ -98,7 +100,9 @@ public class RocketMQConsumer implements MQConsumer {
 					try {
 						Assert.isTrue(msgs.size() == 1, "");
 						MessageExt msg = msgs.get(0);
-						if (listener.receive(msg.getBody())) {
+						MQMessage m = new MQMessage(msg.getMsgId(), msg.getBornTimestamp(), msg.getQueueOffset(),
+								msg.getReconsumeTimes(), msg.getBody());
+						if (listener.receive(m)) {
 							return ConsumeOrderlyStatus.SUCCESS;
 						}
 					} catch (Throwable e) {
@@ -108,8 +112,10 @@ public class RocketMQConsumer implements MQConsumer {
 				}
 			});
 		}
-		
-		topicTags.forEach((k, v) -> { subscribe(k, v); });
+
+		topicTags.forEach((k, v) -> {
+			subscribe(k, v);
+		});
 		return true;
 	}
 
@@ -124,7 +130,7 @@ public class RocketMQConsumer implements MQConsumer {
 	}
 
 	@Override
-	public void stop() {
+	public void shutdown() {
 		Assert.notNull(consumer, "");
 		consumer.shutdown();
 	}

@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.codesky.reb.mq.MQConnector;
+import com.codesky.reb.message.mq.MQConnector;
 
 @Component
 public class MsgLoop extends Thread {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.codesky.reb.mq;
+package com.codesky.reb.message.mq;
 
 public interface MQMessageListener {
 
-	public boolean receive(byte[] msg);
+	public boolean receive(MQMessage msg);
 	
 }
