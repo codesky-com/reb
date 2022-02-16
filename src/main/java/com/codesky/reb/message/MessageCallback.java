@@ -1,9 +1,9 @@
 package com.codesky.reb.message;
 
-import com.google.protobuf.Message;
+import com.codesky.reb.message.struct.DataPacket;
 
 public interface MessageCallback {
 
-	public boolean onMessage(long cmd, Message body);
+	public boolean onMessage(DataPacket packet);
 	
 }

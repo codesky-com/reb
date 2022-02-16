@@ -16,8 +16,6 @@
 
 package com.codesky.reb.message.mq.impl;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
@@ -41,6 +38,8 @@ import org.springframework.util.Assert;
 import com.codesky.reb.message.mq.MQConsumer;
 import com.codesky.reb.message.mq.MQMessage;
 import com.codesky.reb.message.mq.MQMessageListener;
+import com.codesky.reb.message.mq.MQUriUtils;
+import com.codesky.reb.message.mq.MQUriUtils.MQUriProperties;
 
 public class RocketMQConsumer implements MQConsumer {
 
@@ -50,46 +49,33 @@ public class RocketMQConsumer implements MQConsumer {
 
 	@Override
 	public boolean setup(String uri, MQMessageListener listener) {
-		URI u = null;
-		try {
-			u = new URI(uri);
-		} catch (URISyntaxException e) {
-			logger.error("URI={}", uri);
+		MQUriProperties uriProperties = MQUriUtils.parse(uri);
+		if (uriProperties == null) {
+			logger.error("Invalid URI={}", uri);
 			return false;
 		}
 
-		if (!StringUtils.equals(u.getScheme().toLowerCase(), "rocketmq")) {
-			logger.error("'{}' scheme is not rocketmq.", u.getScheme());
-			return false;
-		}
-
-		Collection<String> paramSplits = Arrays.asList(u.getQuery().split("&"));
-		Map<String, String> parameters = new HashMap<String, String>(paramSplits.size());
-		paramSplits.forEach((s) -> {
-			String[] kv = s.split("=");
-			parameters.put(kv[0].trim(), kv[1].trim());
-		});
-
-		String[] checkExistParams = { "group_id", "topicTags" };
-		for (String item : checkExistParams) {
-			if (!parameters.containsKey(item)) {
-				logger.error("lost '{}' parameter.", item);
+		String[] checkProperties = { "group_id", "topicTags" };
+		for (String item : checkProperties) {
+			if (!uriProperties.hasProperty(item)) {
+				logger.error("MQ URI lost '{}' property.", item);
 				return false;
 			}
 		}
 
-		Collection<String> topicTagSplits = Arrays.asList(parameters.get("topicTags").split(","));
+		Collection<String> topicTagSplits = Arrays.asList(uriProperties.getProperty("topicTags").split(","));
 		Map<String, String> topicTags = new HashMap<String, String>(topicTagSplits.size());
 		topicTagSplits.forEach((s) -> {
 			String[] kv = s.split(":");
 			topicTags.put(kv[0].trim(), kv[1].trim());
 		});
 
-		boolean isOrderly = parameters.containsKey("orderly") ? BooleanUtils.toBoolean(parameters.get("orderly"))
+		boolean isOrderly = uriProperties.hasProperty("orderly")
+				? BooleanUtils.toBoolean(uriProperties.getProperty("orderly"))
 				: true;
 
-		consumer = new DefaultMQPushConsumer(parameters.get("group_id"));
-		consumer.setNamesrvAddr(String.format("%s:%d", u.getHost(), u.getPort()));
+		consumer = new DefaultMQPushConsumer(uriProperties.getProperty("group_id"));
+		consumer.setNamesrvAddr(uriProperties.getNameServer());
 		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
 		consumer.setConsumeMessageBatchMaxSize(1);
 

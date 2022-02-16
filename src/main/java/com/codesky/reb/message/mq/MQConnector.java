@@ -21,21 +21,16 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import com.codesky.reb.message.MessageCallback;
-import com.codesky.reb.message.MessageDecoder;
-import com.codesky.reb.message.MessageFactory;
 import com.codesky.reb.message.struct.DataPacket;
 import com.codesky.reb.message.struct.DataStructOuterClass.DataStruct;
-import com.google.protobuf.Message;
 
 @Component
-public class MQConnector implements MQMessageListener, InitializingBean {
+public class MQConnector implements MQMessageListener {
 
 	private final Logger logger = LoggerFactory.getLogger(MQConnector.class);
 
@@ -45,21 +40,20 @@ public class MQConnector implements MQMessageListener, InitializingBean {
 	@Value("${reb.mq.consumer.uri}")
 	private String consumerUri;
 
-	@Autowired
-	private MessageFactory messageFactory;
+	@Value("${reb.mq.producer.provider}")
+	private String producerProvider;
+
+	@Value("${reb.mq.producer.uri}")
+	private String producerUri;
 
 	private MessageCallback messageCallback;
 
-	private MessageDecoder decoder;
-
 	private MQConsumer consumer;
 
-	private final AtomicLong lastRecvTime = new AtomicLong(0);
+	private MQProducer producer;
 
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		decoder = new MessageDecoder(messageFactory);
-	}
+	private final AtomicLong lastRecvTime = new AtomicLong(0);
+	private final AtomicLong lastSendTime = new AtomicLong(0);
 
 	public MessageCallback getMessageCallback() {
 		return messageCallback;
@@ -90,16 +84,40 @@ public class MQConnector implements MQMessageListener, InitializingBean {
 		return null;
 	}
 
+	private MQProducer newProducer() {
+		Assert.notNull(producerProvider, "");
+		Assert.notNull(producerUri, "");
+
+		try {
+			Class<?> providerClazz = Class.forName(producerProvider);
+			if (MQProducer.class.isAssignableFrom(providerClazz)) {
+				MQProducer instance = (MQProducer) providerClazz.getDeclaredConstructor().newInstance();
+				if (instance.setup(producerUri))
+					return instance;
+			}
+		} catch (Throwable e) {
+			logger.error(ExceptionUtils.getStackTrace(e));
+		}
+		return null;
+	}
+
 	public void connect() {
 		if (consumer == null) {
 			consumer = newConsumer();
 		}
 
+		if (producer == null) {
+			producer = newProducer();
+		}
+
 		Assert.notNull(consumer, "");
+		Assert.notNull(producer, "");
 
 		consumer.start();
+		producer.start();
 
 		lastRecvTime.set(System.currentTimeMillis());
+		lastSendTime.set(System.currentTimeMillis());
 	}
 
 	public void close() {
@@ -107,7 +125,12 @@ public class MQConnector implements MQMessageListener, InitializingBean {
 			consumer.shutdown();
 		}
 
+		if (producer != null) {
+			producer.shutdown();
+		}
+
 		consumer = null;
+		producer = null;
 	}
 
 	public void reconnect() {
@@ -124,14 +147,7 @@ public class MQConnector implements MQMessageListener, InitializingBean {
 
 			DataStruct ds = DataStruct.parseFrom(mqMsg.getBody());
 			DataPacket packet = new DataPacket(ds);
-
-			Message msg = decoder.decode(packet);
-			if (msg == null) {
-				logger.error("Unknown message cmd={}", Long.toHexString(packet.getCmd()));
-				return false;
-			}
-
-			return messageCallback.onMessage(packet.getCmd(), msg);
+			return messageCallback.onMessage(packet);
 
 		} catch (Exception e) {
 			e.printStackTrace();

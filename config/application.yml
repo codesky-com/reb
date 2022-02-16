@@ -6,3 +6,7 @@ reb:
     consumer:
       provider: com.codesky.reb.message.mq.impl.RocketMQConsumer
       uri: rocketmq://kk-dev-server:9876?group_id=reb_dev&orderly=yes&topicTags=test:*
+
+    producer:
+      provider: com.codesky.reb.message.mq.impl.RocketMQProducer
+      uri: rocketmq://kk-dev-server:9876?group_id=reb_default_producer_group&orderly=yes

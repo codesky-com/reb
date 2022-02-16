@@ -20,6 +20,14 @@ public class DataPacket {
 		this.data = ds.getData().toByteArray();
 	}
 	
+	public DataPacket(long cmd, long flags, long sign, byte[] data) {
+		this.length = data.length + HEADER_SIZE;
+		this.cmd = cmd;
+		this.flags = flags;
+		this.sign = sign;
+		this.data = data;
+	}
+	
 	public int getLength() {
 		return length;
 	}
