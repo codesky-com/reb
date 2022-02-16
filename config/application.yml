@@ -1,5 +1,6 @@
 reb:
   scan_base_packages: com.codesky.reb
+  proto_base_packages: com.codesky
 
   mq:
     consumer:

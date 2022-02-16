@@ -8,10 +8,9 @@ public class MQMessage {
 	private int reconsumeTimes;
 	private byte[] body;
 
-	
 	public MQMessage() {
 	}
-	
+
 	public MQMessage(String msgId, long bornTimestamp, long queueOffset, int reconsumeTimes, byte[] body) {
 		this.msgId = msgId;
 		this.bornTimestamp = bornTimestamp;
@@ -51,7 +50,7 @@ public class MQMessage {
 	public void setReconsumeTimes(int reconsumeTimes) {
 		this.reconsumeTimes = reconsumeTimes;
 	}
-	
+
 	public byte[] getBody() {
 		return body;
 	}

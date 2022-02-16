@@ -21,12 +21,21 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
+import com.codesky.reb.message.MessageCallback;
+import com.codesky.reb.message.MessageDecoder;
+import com.codesky.reb.message.MessageFactory;
+import com.codesky.reb.message.struct.DataPacket;
+import com.codesky.reb.message.struct.DataStructOuterClass.DataStruct;
+import com.google.protobuf.Message;
+
 @Component
-public class MQConnector implements MQMessageListener {
+public class MQConnector implements MQMessageListener, InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(MQConnector.class);
 
@@ -36,10 +45,30 @@ public class MQConnector implements MQMessageListener {
 	@Value("${reb.mq.consumer.uri}")
 	private String consumerUri;
 
+	@Autowired
+	private MessageFactory messageFactory;
+
+	private MessageCallback messageCallback;
+
+	private MessageDecoder decoder;
+
 	private MQConsumer consumer;
-	
+
 	private final AtomicLong lastRecvTime = new AtomicLong(0);
-	
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		decoder = new MessageDecoder(messageFactory);
+	}
+
+	public MessageCallback getMessageCallback() {
+		return messageCallback;
+	}
+
+	public void setMessageCallback(MessageCallback messageCallback) {
+		this.messageCallback = messageCallback;
+	}
+
 	public final long getLastRecvTime() {
 		return lastRecvTime.get();
 	}
@@ -69,35 +98,44 @@ public class MQConnector implements MQMessageListener {
 		Assert.notNull(consumer, "");
 
 		consumer.start();
-		
+
 		lastRecvTime.set(System.currentTimeMillis());
 	}
-	
+
 	public void close() {
 		if (consumer != null) {
 			consumer.shutdown();
 		}
-		
+
 		consumer = null;
 	}
-	
+
 	public void reconnect() {
 		close();
 		connect();
 	}
 
 	@Override
-	public boolean receive(MQMessage msg) {
+	public boolean receive(MQMessage mqMsg) {
 		try {
 			lastRecvTime.set(System.currentTimeMillis());
-			
-			String txt = new String(msg.getBody(), "UTF-8");
-			System.out.println(txt);
-			return true;
+			if (messageCallback == null)
+				return true;
+
+			DataStruct ds = DataStruct.parseFrom(mqMsg.getBody());
+			DataPacket packet = new DataPacket(ds);
+
+			Message msg = decoder.decode(packet);
+			if (msg == null) {
+				logger.error("Unknown message cmd={}", Long.toHexString(packet.getCmd()));
+				return false;
+			}
+
+			return messageCallback.onMessage(packet.getCmd(), msg);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return false;
 	}
-
 }

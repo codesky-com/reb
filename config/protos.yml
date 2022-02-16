@@ -1,0 +1,10 @@
+protos:
+  descriptors[0]:
+    cmd: 0x100000
+    fullName: com.codesky.reb.message.struct.DataStruct
+    handlers: com.codesky.reb.message.MessageHandler
+   
+  descriptors[1]:
+    cmd: 0x100001
+    fullName: com.codesky.reb.message.struct.DataStruct
+    handlers: com.codesky.reb.message.MessageHandler

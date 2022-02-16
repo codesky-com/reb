@@ -89,7 +89,7 @@ public class ClassScanner {
 		for (Resource res : resources) {
 			MetadataReader reader = readerFactory.getMetadataReader(res);
 			String className = reader.getClassMetadata().getClassName();
-			if (className.startsWith(pkgPrefix) && className.indexOf("$") == -1) {
+			if (className.startsWith(pkgPrefix)) {
 				classNames.add(className);
 			}
 		}
@@ -114,7 +114,7 @@ public class ClassScanner {
 					while (entries.hasMoreElements()) {
 						JarEntry entry = entries.nextElement();
 						String resourcePath = entry.getName();
-						if (resourcePath.endsWith(".class") && resourcePath.indexOf("$") == -1) {
+						if (resourcePath.endsWith(".class")) {
 							String className = ClassUtils.convertResourcePathToClassName(
 									resourcePath.substring(0, resourcePath.indexOf(".class")));
 							if (className.startsWith(pkgPrefix)) {
