@@ -54,6 +54,8 @@ public class MQConnector implements MQMessageListener {
 
 	private final AtomicLong lastRecvTime = new AtomicLong(0);
 	private final AtomicLong lastSendTime = new AtomicLong(0);
+	private final AtomicLong recvMsgCounter = new AtomicLong(0);
+	private final AtomicLong sendMsgCounter = new AtomicLong(0);
 
 	public MessageCallback getMessageCallback() {
 		return messageCallback;
@@ -65,6 +67,18 @@ public class MQConnector implements MQMessageListener {
 
 	public final long getLastRecvTime() {
 		return lastRecvTime.get();
+	}
+
+	public final long getLastSendTime() {
+		return lastSendTime.get();
+	}
+
+	public final long getRecvMsgCount() {
+		return recvMsgCounter.get();
+	}
+
+	public final long getSendMsgCount() {
+		return sendMsgCounter.get();
 	}
 
 	private MQConsumer newConsumer() {
@@ -99,6 +113,16 @@ public class MQConnector implements MQMessageListener {
 			logger.error(ExceptionUtils.getStackTrace(e));
 		}
 		return null;
+	}
+
+	public boolean send(byte[] body, String topic, String tags) {
+		Assert.notNull(producer, "");
+		if (producer.send(body, topic, tags)) {
+			lastSendTime.set(System.currentTimeMillis());
+			sendMsgCounter.incrementAndGet();
+			return true;
+		}
+		return false;
 	}
 
 	public void connect() {
@@ -142,6 +166,7 @@ public class MQConnector implements MQMessageListener {
 	public boolean receive(MQMessage mqMsg) {
 		try {
 			lastRecvTime.set(System.currentTimeMillis());
+			recvMsgCounter.incrementAndGet();
 			if (messageCallback == null)
 				return true;
 
