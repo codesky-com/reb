@@ -107,18 +107,20 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 			while (running.get()) {
 				try {
-					Pair<Long, Message> pair = messageQueue.poll();
-					if (pair != null) {
-						Collection<Class<? extends MessageHandler>> handlerClasses = messageFactory
-								.getMessageHandlersByCmd(pair.getKey());
-						if (handlerClasses != null) {
-							for (Class<? extends MessageHandler> clazz : handlerClasses) {
-								MessageHandler handler = clazz.getDeclaredConstructor().newInstance();
-								handler.execute(pair.getKey(), pair.getValue());
+					for (int i = 0; i < 8; i++) {
+						Pair<Long, Message> pair = messageQueue.poll();
+						if (pair != null) {
+							Collection<Class<? extends MessageHandler>> handlerClasses = messageFactory
+									.getMessageHandlersByCmd(pair.getKey());
+							if (handlerClasses != null) {
+								for (Class<? extends MessageHandler> clazz : handlerClasses) {
+									MessageHandler handler = clazz.getDeclaredConstructor().newInstance();
+									handler.execute(pair.getKey(), pair.getValue());
+								}
 							}
 						}
 					}
-					Thread.sleep(3);
+					Thread.sleep(2);
 				} catch (Throwable e) {
 					logger.error(ExceptionUtils.getStackTrace(e));
 				}
@@ -138,8 +140,6 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 	public final static class SendMsgQueue extends Thread {
 
 		private final Logger logger = LoggerFactory.getLogger(SendMsgQueue.class);
-
-		public final static int BATCH_SEND_NUM = 5;
 
 		private final ConcurrentLinkedQueue<MsqQueueItem> queue = new ConcurrentLinkedQueue<MsqQueueItem>();
 
@@ -177,7 +177,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 							break;
 						}
 
-						for (int i = 0; i < BATCH_SEND_NUM; i++) {
+						for (int i = 0; i < 8; i++) {
 							if (queue.isEmpty())
 								break;
 
@@ -189,7 +189,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 					if (!running.get())
 						break;
 
-					Thread.sleep(3);
+					Thread.sleep(2);
 				}
 			} catch (Throwable e) {
 				logger.error(ExceptionUtils.getStackTrace(e));
