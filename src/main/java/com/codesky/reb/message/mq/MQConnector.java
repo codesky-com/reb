@@ -16,6 +16,8 @@
 
 package com.codesky.reb.message.mq;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -163,19 +165,24 @@ public class MQConnector implements MQMessageListener {
 	}
 
 	@Override
-	public boolean receive(MQMessage mqMsg) {
+	public boolean receive(Collection<MQMessage> msgs) {
 		try {
 			lastRecvTime.set(System.currentTimeMillis());
-			recvMsgCounter.incrementAndGet();
+			recvMsgCounter.addAndGet(msgs.size());
 			if (messageCallback == null)
 				return true;
 
-			DataStruct ds = DataStruct.parseFrom(mqMsg.getBody());
-			DataPacket packet = new DataPacket(ds);
-			return messageCallback.onMessage(packet);
+			Collection<DataPacket> packets = new ArrayList<DataPacket>(msgs.size());
+			for (MQMessage msg : msgs) {
+				DataStruct ds = DataStruct.parseFrom(msg.getBody());
+				DataPacket packet = new DataPacket(ds);
+				packets.add(packet);
+			}
 
-		} catch (Exception e) {
-			e.printStackTrace();
+			return messageCallback.onMessage(packets);
+
+		} catch (Throwable e) {
+			logger.error(ExceptionUtils.getStackTrace(e));
 		}
 		return false;
 	}

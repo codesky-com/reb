@@ -1,3 +1,7 @@
+spring:
+  profiles:
+    active: default
+
 reb:
   scan_base_packages: com.codesky.reb
   proto_base_packages: com.codesky
@@ -5,7 +9,7 @@ reb:
   mq:
     consumer:
       provider: com.codesky.reb.message.mq.impl.RocketMQConsumer
-      uri: rocketmq://kk-dev-server:9876?group_id=reb_dev&orderly=yes&topicTags=test:*
+      uri: rocketmq://kk-dev-server:9876?group_id=reb_dev&orderly=yes&batchMaxSize=2&topicTags=test:*
 
     producer:
       provider: com.codesky.reb.message.mq.impl.RocketMQProducer

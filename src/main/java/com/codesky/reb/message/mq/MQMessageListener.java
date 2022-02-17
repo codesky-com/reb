@@ -16,8 +16,10 @@
 
 package com.codesky.reb.message.mq;
 
+import java.util.Collection;
+
 public interface MQMessageListener {
 
-	public boolean receive(MQMessage msg);
+	public boolean receive(Collection<MQMessage> msgs);
 	
 }

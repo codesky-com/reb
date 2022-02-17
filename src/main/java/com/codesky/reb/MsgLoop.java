@@ -16,6 +16,7 @@
 
 package com.codesky.reb;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,14 +76,18 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 	}
 
 	@Override
-	public boolean onMessage(DataPacket packet) {
-		Message protoMsg = decoder.decode(packet);
-		if (protoMsg == null) {
-			logger.error("Unknown message cmd={}", Long.toHexString(packet.getCmd()));
-			return false;
+	public boolean onMessage(Collection<DataPacket> packets) {
+		Collection<Pair<Long, Message>> protoMessages = new ArrayList<Pair<Long, Message>>(packets.size());
+		for (DataPacket packet : packets) {
+			Message protoMsg = decoder.decode(packet);
+			if (protoMsg == null) {
+				logger.error("Unknown message cmd={}", Long.toHexString(packet.getCmd()));
+				return false;
+			}
+			protoMessages.add(new ImmutablePair<Long, Message>(packet.getCmd(), protoMsg));
 		}
 
-		messageQueue.add(new ImmutablePair<Long, Message>(packet.getCmd(), protoMsg));
+		messageQueue.addAll(protoMessages);
 		return true;
 	}
 
@@ -109,7 +114,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 						if (handlerClasses != null) {
 							for (Class<? extends MessageHandler> clazz : handlerClasses) {
 								MessageHandler handler = clazz.getDeclaredConstructor().newInstance();
-								handler.execute(pair.getValue());
+								handler.execute(pair.getKey(), pair.getValue());
 							}
 						}
 					}
@@ -133,7 +138,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 	public final static class SendMsgQueue extends Thread {
 
 		private final Logger logger = LoggerFactory.getLogger(SendMsgQueue.class);
-		
+
 		public final static int BATCH_SEND_NUM = 5;
 
 		private final ConcurrentLinkedQueue<MsqQueueItem> queue = new ConcurrentLinkedQueue<MsqQueueItem>();
@@ -148,6 +153,8 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 		}
 
 		public boolean put(DataPacket packet, String topic, String tags) {
+			if (!running.get())
+				return false;
 			return queue.add(new MsqQueueItem(packet, topic, tags));
 		}
 
@@ -157,6 +164,8 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 		@Override
 		public void run() {
+			logger.info("SendMsgQueueThread running.");
+
 			try {
 				while (true) {
 					if (!queue.isEmpty()) {
@@ -185,6 +194,8 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 			} catch (Throwable e) {
 				logger.error(ExceptionUtils.getStackTrace(e));
 			}
+
+			logger.info("SendMsgQueueThread exit.");
 		}
 
 		private final static class MsqQueueItem {

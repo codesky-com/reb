@@ -16,6 +16,7 @@
 
 package com.codesky.reb.message.mq.impl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -74,23 +75,30 @@ public class RocketMQConsumer implements MQConsumer {
 				? BooleanUtils.toBoolean(uriProperties.getProperty("orderly"))
 				: true;
 
+		int batchMaxSize = uriProperties.hasProperty("batchMaxSize")
+				? Integer.valueOf(uriProperties.getProperty("batchMaxSize"))
+				: 1;
+
 		consumer = new DefaultMQPushConsumer(uriProperties.getProperty("group_id"));
 		consumer.setNamesrvAddr(uriProperties.getNameServer());
 		consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_FIRST_OFFSET);
-		consumer.setConsumeMessageBatchMaxSize(1);
+		consumer.setConsumeMessageBatchMaxSize(batchMaxSize);
 
 		if (isOrderly) {
 			consumer.registerMessageListener(new MessageListenerOrderly() {
 				@Override
 				public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs, ConsumeOrderlyContext context) {
 					try {
-						Assert.isTrue(msgs.size() == 1, "");
-						MessageExt msg = msgs.get(0);
-						MQMessage m = new MQMessage(msg.getMsgId(), msg.getBornTimestamp(), msg.getQueueOffset(),
-								msg.getReconsumeTimes(), msg.getBody());
-						if (listener.receive(m)) {
+						Collection<MQMessage> mqMessages = new ArrayList<MQMessage>(msgs.size());
+						msgs.forEach((item) -> {
+							MQMessage m = new MQMessage(item.getMsgId(), item.getBornTimestamp(), item.getQueueOffset(),
+									item.getReconsumeTimes(), item.getBody());
+							mqMessages.add(m);
+						});
+
+						if (listener.receive(mqMessages))
 							return ConsumeOrderlyStatus.SUCCESS;
-						}
+
 					} catch (Throwable e) {
 						logger.error(ExceptionUtils.getStackTrace(e));
 					}
