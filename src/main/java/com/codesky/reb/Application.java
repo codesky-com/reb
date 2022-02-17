@@ -32,6 +32,8 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.ContextClosedEvent;
 
+import com.google.protobuf.Message;
+
 @EnableAutoConfiguration
 @ComponentScan(basePackages = { "${reb.scan_base_packages}" })
 public class Application implements CommandLineRunner, ApplicationListener<ApplicationEvent> {
@@ -77,6 +79,18 @@ public class Application implements CommandLineRunner, ApplicationListener<Appli
 		logger.info("System has been shutdown!!!");
 		context.reset();
 		shutdownSignal.release();
+	}
+	
+	public boolean isRunning() {
+		return running.get();
+	}
+	
+	public boolean sendMessage(Message protoMsg, String topic) {
+		return sendMessage(protoMsg, topic, "");
+	}
+	
+	public boolean sendMessage(Message protoMsg, String topic, String tags) {
+		return msgLoop.sendMessage(protoMsg, topic, tags);
 	}
 
 	@Override

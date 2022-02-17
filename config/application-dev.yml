@@ -1,0 +1,12 @@
+reb:
+  scan_base_packages: com.codesky.reb,com.codesky.test.reb,
+  proto_base_packages: com.codesky.test
+
+  mq:
+    consumer:
+      provider: com.codesky.reb.message.mq.impl.RocketMQConsumer
+      uri: rocketmq://kk-dev-server:9876?group_id=reb_dev&orderly=yes&batchMaxSize=1&topicTags=test:*
+
+    producer:
+      provider: com.codesky.reb.message.mq.impl.RocketMQProducer
+      uri: rocketmq://kk-dev-server:9876?group_id=reb_default_producer_group&orderly=yes
