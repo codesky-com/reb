@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.codesky.reb.message.MessageCallback;
@@ -51,6 +52,9 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 	private final ConcurrentLinkedQueue<Pair<Long, Message>> messageQueue = new ConcurrentLinkedQueue<Pair<Long, Message>>();
 
+	@Value("${reb.msg.security_key}")
+	private String securityKey;
+	
 	@Autowired
 	private MessageFactory messageFactory;
 
@@ -69,8 +73,8 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		encoder = new MessageEncoder(messageFactory);
-		decoder = new MessageDecoder(messageFactory);
+		encoder = new MessageEncoder(messageFactory, securityKey);
+		decoder = new MessageDecoder(messageFactory, securityKey);
 		sendQueue = new SendMsgQueue(this);
 	}
 
@@ -84,7 +88,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 		for (DataPacket packet : packets) {
 			Message protoMsg = decoder.decode(packet);
 			if (protoMsg == null) {
-				logger.error("Unknown message cmd={}", Long.toHexString(packet.getCmd()));
+				logger.error("Unknown message cmd=0x{}", Long.toHexString(packet.getCmd()));
 				return false;
 			}
 			protoMessages.add(new ImmutablePair<Long, Message>(packet.getCmd(), protoMsg));

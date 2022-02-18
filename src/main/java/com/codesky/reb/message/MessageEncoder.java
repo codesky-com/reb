@@ -19,6 +19,7 @@
 
 package com.codesky.reb.message;
 
+import java.io.UnsupportedEncodingException;
 import java.util.zip.CRC32;
 
 import com.codesky.reb.message.struct.DataPacket;
@@ -28,14 +29,20 @@ import com.google.protobuf.Message;
 public class MessageEncoder {
 
 	private final MessageFactory messageFactory;
+	private final byte[] signBytesArray;
 
-	public MessageEncoder(MessageFactory messageFactory) {
+	public MessageEncoder(MessageFactory messageFactory, String signKey) throws UnsupportedEncodingException {
 		this.messageFactory = messageFactory;
+		this.signBytesArray = signKey.getBytes("UTF-8");
 	}
 
 	private long sign(byte[] data) {
+		byte[] tmp = new byte[data.length + signBytesArray.length];
+		System.arraycopy(data, 0, tmp, 0, data.length);
+		System.arraycopy(signBytesArray, 0, tmp, data.length, signBytesArray.length);
+		
 		CRC32 crc32 = new CRC32();
-		crc32.update(data);
+		crc32.update(tmp);
 		return crc32.getValue();
 	}
 

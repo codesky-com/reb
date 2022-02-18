@@ -2,6 +2,9 @@ reb:
   scan_base_packages: com.codesky.reb,com.codesky.test.reb,
   proto_base_packages: com.codesky.test
 
+  msg:
+    security_key: LAxx8xCsB4pakW7o
+
   mq:
     consumer:
       provider: com.codesky.reb.message.mq.impl.RocketMQConsumer
