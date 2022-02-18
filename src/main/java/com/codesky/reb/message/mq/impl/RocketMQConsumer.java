@@ -29,8 +29,11 @@ import java.util.Map;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
+import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyStatus;
+import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
@@ -106,6 +109,28 @@ public class RocketMQConsumer implements MQConsumer {
 						logger.error(ExceptionUtils.getStackTrace(e));
 					}
 					return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+				}
+			});
+		} else {
+			consumer.registerMessageListener(new MessageListenerConcurrently() {
+				@Override
+				public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+						ConsumeConcurrentlyContext context) {
+					try {
+						Collection<MQMessage> mqMessages = new ArrayList<MQMessage>(msgs.size());
+						msgs.forEach((item) -> {
+							MQMessage m = new MQMessage(item.getMsgId(), item.getBornTimestamp(), item.getQueueOffset(),
+									item.getReconsumeTimes(), item.getBody());
+							mqMessages.add(m);
+						});
+
+						if (listener.receive(mqMessages))
+							return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+
+					} catch (Throwable e) {
+						logger.error(ExceptionUtils.getStackTrace(e));
+					}
+					return ConsumeConcurrentlyStatus.RECONSUME_LATER;
 				}
 			});
 		}
