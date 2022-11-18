@@ -24,7 +24,7 @@ import com.google.protobuf.ByteString;
 
 public class DataPacket {
 
-	public final static int HEADER_SIZE = Integer.SIZE + Long.BYTES * 3;
+	public final static int HEADER_SIZE = Integer.BYTES + Long.BYTES * 3;
 
 	private int length;
 	private long cmd;
@@ -49,14 +49,17 @@ public class DataPacket {
 	}
 
 	public byte[] toDataStructByteArray() {
-		DataStruct ds = DataStruct.newBuilder()
-				.setLength(length)
-				.setCmd(cmd)
-				.setFlags(flags)
-				.setSign(sign)
-				.setData(ByteString.copyFrom(data))
-				.build();
-		return ds.toByteArray();
+		return toDataStruct().toByteArray();
+	}
+	
+	public DataStruct toDataStruct() {
+		return DataStruct.newBuilder()
+			.setLength(length)
+			.setCmd(cmd)
+			.setFlags(flags)
+			.setSign(sign)
+			.setData(ByteString.copyFrom(data))
+			.build();
 	}
 
 	public int getLength() {

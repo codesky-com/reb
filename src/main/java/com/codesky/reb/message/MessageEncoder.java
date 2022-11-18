@@ -22,28 +22,36 @@ package com.codesky.reb.message;
 import java.io.UnsupportedEncodingException;
 import java.util.zip.CRC32;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import com.codesky.reb.message.struct.DataPacket;
 import com.google.protobuf.Descriptors.Descriptor;
 import com.google.protobuf.Message;
 
+@Component
 public class MessageEncoder {
 
-	private final MessageFactory messageFactory;
-	private final byte[] signBytesArray;
+	@Autowired
+	private MessageFactory messageFactory;
 
-	public MessageEncoder(MessageFactory messageFactory, String signKey) throws UnsupportedEncodingException {
-		this.messageFactory = messageFactory;
-		this.signBytesArray = signKey.getBytes("UTF-8");
-	}
+	@Value("${reb.msg.security_key}")
+	private String securityKey;
 
 	private long sign(byte[] data) {
-		byte[] tmp = new byte[data.length + signBytesArray.length];
-		System.arraycopy(data, 0, tmp, 0, data.length);
-		System.arraycopy(signBytesArray, 0, tmp, data.length, signBytesArray.length);
-		
-		CRC32 crc32 = new CRC32();
-		crc32.update(tmp);
-		return crc32.getValue();
+		try {
+			byte[] signBytesArray = securityKey.getBytes("UTF-8");
+			byte[] tmp = new byte[data.length + signBytesArray.length];
+			System.arraycopy(data, 0, tmp, 0, data.length);
+			System.arraycopy(signBytesArray, 0, tmp, data.length, signBytesArray.length);
+			
+			CRC32 crc32 = new CRC32();
+			crc32.update(tmp);
+			return crc32.getValue();
+		} catch (UnsupportedEncodingException ex) {
+			return -1;
+		}
 	}
 
 	public DataPacket encode(Message protoMsg) {

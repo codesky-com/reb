@@ -61,8 +61,10 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 	@Autowired
 	private MQConnector connector;
 
+	@Autowired
 	private MessageEncoder encoder;
 
+	@Autowired
 	private MessageDecoder decoder;
 
 	private SendMsgQueue sendQueue;
@@ -73,8 +75,6 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		encoder = new MessageEncoder(messageFactory, securityKey);
-		decoder = new MessageDecoder(messageFactory, securityKey);
 		sendQueue = new SendMsgQueue(this);
 	}
 

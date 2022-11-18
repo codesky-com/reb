@@ -22,7 +22,7 @@ package com.codesky.test.reb;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
-import org.springframework.stereotype.Component;
+//import org.springframework.stereotype.Component;
 
 import com.codesky.reb.Application;
 import com.codesky.reb.Service;
@@ -30,7 +30,7 @@ import com.codesky.reb.utils.SpringUtils;
 import com.codesky.test.reb.message.TestHelloMessageHandler;
 import com.codesky.test.reb.message.TestHelloMessageOuterClass.TestHelloMessage;
 
-@Component
+//@Component
 public class TestMessage implements Service {
 
 	private final AtomicLong sendCounter = new AtomicLong(0);
@@ -76,7 +76,7 @@ public class TestMessage implements Service {
 
 	@Test
 	public void testMessage() {
-		Application.main(new String[] {});
+//		Application.main(new String[] {});
 	}
 
 	@Override

@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -81,7 +82,7 @@ public class MessageFactory implements InitializingBean {
 					Class<? extends MessageHandler> clazz = (Class<? extends MessageHandler>) Class.forName(s);
 					handlerClasses.add(clazz);
 				} catch (ClassNotFoundException e) {
-					logger.error(e.getMessage());
+					logger.error(ExceptionUtils.getStackTrace(e));
 				}
 			});
 			messages.putIfAbsent(descriptor.getCmd(), new MessageDescriptor(descriptor.getFullName(), handlerClasses));

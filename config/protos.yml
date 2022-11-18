@@ -1,6 +1,10 @@
-protos:
-  descriptors[0]:
-    cmd: 0x100000
-    fullName: com.codesky.test.reb.message.TestHelloMessage
-    handlers: com.codesky.test.reb.message.TestHelloMessageHandler
- 
+
+protos: {
+   descriptors: [
+      {
+         cmd: 0x100000,
+         fullName: 'com.codesky.test.reb.message.TestHelloMessage',
+         handlers: 'com.codesky.test.reb.message.TestHelloMessageHandler',
+      }
+   ]
+}
