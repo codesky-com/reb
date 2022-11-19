@@ -87,7 +87,7 @@ public class ClassScanner {
 		Collection<String> classNames = new ArrayList<String>();
 		ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 		MetadataReaderFactory readerFactory = new CachingMetadataReaderFactory(resolver);
-		Resource[] resources = resolver.getResources("/**/*.class");
+		Resource[] resources = resolver.getResources("classpath*:/**/*.class");
 
 		for (Resource res : resources) {
 			MetadataReader reader = readerFactory.getMetadataReader(res);
