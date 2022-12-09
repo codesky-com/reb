@@ -82,5 +82,37 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 		</dependency>
+
+		<!-- jodd -->
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-core</artifactId>
+			<version>3.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-bean</artifactId>
+			<version>3.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-props</artifactId>
+			<version>3.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-http</artifactId>
+			<version>3.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-json</artifactId>
+			<version>3.9.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jodd</groupId>
+			<artifactId>jodd-proxetta</artifactId>
+			<version>3.9.1</version>
+		</dependency>
 	</dependencies>
 </project>

@@ -2,3 +2,4 @@
 问：调试运行时无法加载 test-classes 目录class文件的解决办法
 答：Debug Configurations -> [调试APP名称] -> Dependencies 取消 Exclude test code 勾选
 ----------------------------------------------------------------
+ljh test commit
