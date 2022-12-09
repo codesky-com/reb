@@ -69,7 +69,7 @@ public class Application implements CommandLineRunner, ApplicationListener<Appli
 		msgLoop.start();
 
 		while (running.get()) {
-			Thread.sleep(3000);
+			Thread.sleep(30000);
 			logger.info("Application Alive.");
 		}
 

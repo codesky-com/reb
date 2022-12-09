@@ -90,7 +90,7 @@ public class MainLoop extends Thread {
 			long ms = System.currentTimeMillis();
 			try {
 				tick(ms);
-				Thread.sleep(30000);
+				Thread.sleep(2);
 			} catch (InterruptedException e) {
 				logger.error(ExceptionUtils.getStackTrace(e));
 			}
