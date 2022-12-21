@@ -23,6 +23,9 @@ reb: {
          provider: 'com.codesky.reb.message.mq.impl.RocketMQProducer',
          uri: 'rocketmq://test.codesky.com:9876?group_id=reb_default_producer_group&orderly=yes',
       },
-   }
+  },
+  web: {
+     requestURI: '/index',
+  },
 }
       
