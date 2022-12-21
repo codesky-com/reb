@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +35,10 @@ public class CmdHandler {
 
 	public void handle(HttpServletRequest request, HttpServletResponse response) {
 		try {
+			if (!StringUtils.equals(request.getMethod(), "POST")) {
+				return; // Cross Ignore.
+			}
+			
 			DataStruct ds = DataStruct.parseFrom(request.getInputStream());
 			Message msg = decoder.decode(new DataPacket(ds));
 			
