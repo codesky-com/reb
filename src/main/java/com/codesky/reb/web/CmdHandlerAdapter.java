@@ -19,7 +19,7 @@ public class CmdHandlerAdapter implements HandlerAdapter {
 	public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 		CmdHandler ch = (CmdHandler)handler;
-		ch.handle(request, response);
+		ch.handle(response);
 		return null;
 		
 	}

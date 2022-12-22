@@ -11,18 +11,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerExecutionChain;
 import org.springframework.web.servlet.HandlerMapping;
 
-import com.codesky.reb.message.MessageDecoder;
-import com.codesky.reb.message.MessageEncoder;
-
 @Component
 @Order(value = Ordered.HIGHEST_PRECEDENCE)
 public class CmdHandlerMapping implements HandlerMapping {
-
-	@Autowired
-	private MessageEncoder encoder;
-	
-	@Autowired
-	private MessageDecoder decoder;
 	
 	@Autowired
 	private CmdManager manager;
@@ -33,10 +24,9 @@ public class CmdHandlerMapping implements HandlerMapping {
 	@Override
 	public HandlerExecutionChain getHandler(HttpServletRequest request) throws Exception {
 		String uri = request.getRequestURI();
-		if (StringUtils.equalsIgnoreCase(uri, requestURI)) {
-			CmdHandler handler = new CmdHandler(manager, encoder, decoder);
-			HandlerExecutionChain chain = new HandlerExecutionChain(handler);
-			return chain;
+		if (StringUtils.equals(request.getMethod(), "POST") // Cross Ignore.
+			&& StringUtils.equalsIgnoreCase(uri, requestURI)) {
+			return manager.newExecutionChain(request);
 		}
 		return null;
 	}
