@@ -4,7 +4,7 @@ protos: {
       {
          cmd: 0x100000,
          fullName: 'com.codesky.test.reb.message.TestHelloMessage',
-         handlers: 'com.codesky.test.reb.message.TestHelloMessageHandler',
+         handler: 'com.codesky.test.reb.message.TestHelloMessageHandler.hello',
       }
    ]
 }

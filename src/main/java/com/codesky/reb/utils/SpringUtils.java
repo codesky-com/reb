@@ -19,6 +19,7 @@
 
 package com.codesky.reb.utils;
 
+import java.lang.annotation.Annotation;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -50,6 +51,11 @@ public class SpringUtils implements ApplicationContextAware {
 	public final static <T> Map<String, T> getBeansOfType(Class<T> type) {
 		Assert.notNull(appContext, "");
 		return appContext.getBeansOfType(type);
+	}
+	
+	public final static Map<String, Object> getBeansWithAnnotation(Class<? extends Annotation> type) {
+		Assert.notNull(appContext, "");
+		return appContext.getBeansWithAnnotation(type);
 	}
 
 	@Override

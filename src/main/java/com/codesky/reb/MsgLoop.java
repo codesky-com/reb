@@ -19,6 +19,7 @@
 
 package com.codesky.reb;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -33,14 +34,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ReflectionUtils;
 
 import com.codesky.reb.message.MessageCallback;
 import com.codesky.reb.message.MessageDecoder;
 import com.codesky.reb.message.MessageEncoder;
 import com.codesky.reb.message.MessageFactory;
-import com.codesky.reb.message.MessageHandler;
 import com.codesky.reb.message.mq.MQConnector;
 import com.codesky.reb.message.struct.DataPacket;
+import com.codesky.reb.utils.SpringUtils;
 import com.google.protobuf.Message;
 
 @Component
@@ -105,6 +107,7 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 
 	@Override
 	public void run() {
+		
 		try {
 			logger.info("MsgLoopThread running.");
 
@@ -116,15 +119,22 @@ public class MsgLoop extends Thread implements MessageCallback, InitializingBean
 				try {
 					for (int i = 0; i < 8; i++) {
 						Pair<Long, Message> pair = messageQueue.poll();
-						if (pair != null) {
-							Collection<Class<? extends MessageHandler>> handlerClasses = messageFactory
-									.getMessageHandlersByCmd(pair.getKey());
-							if (handlerClasses != null) {
-								for (Class<? extends MessageHandler> clazz : handlerClasses) {
-									MessageHandler handler = clazz.getDeclaredConstructor().newInstance();
-									handler.execute(pair.getKey(), pair.getValue());
-								}
+						if (pair == null)
+							break;
+						
+						Method handler = messageFactory.getMessageHandlerByCmd(pair.getKey());
+						if (handler == null)
+							continue;
+						
+						Object target = SpringUtils.getBean(handler.getDeclaringClass());
+						if (target == null) {
+							try {
+								target = handler.getDeclaringClass().getDeclaredConstructor().newInstance();
+							} catch (Throwable e) {
 							}
+						}
+						if (target != null) {
+							ReflectionUtils.invokeMethod(handler, target, pair.getValue());
 						}
 					}
 					Thread.sleep(2);

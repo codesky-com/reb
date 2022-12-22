@@ -20,11 +20,8 @@
 package com.codesky.reb.message;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,14 +45,14 @@ public class MessageFactory implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(MessageFactory.class);
 
-	private final ConcurrentHashMap<String, ProtoType> protoTypes = new ConcurrentHashMap<String, ProtoType>(128);
+	private final ConcurrentHashMap<String, Method> protoParsers = new ConcurrentHashMap<String, Method>(256);
 	private final ConcurrentHashMap<Long, MessageDescriptor> messages = new ConcurrentHashMap<Long, MessageDescriptor>();
-
-	@Value("${reb.proto_base_packages}")
-	private String protoBasePackages;
 	
 	@Autowired
 	private ProtosProperties protosProperties;
+	
+	@Value("${reb.proto_base_packages}")
+	private String protoBasePackages;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -64,32 +61,44 @@ public class MessageFactory implements InitializingBean {
 	}
 
 	private void initFactory() {
-		if (!StringUtils.isBlank(protoBasePackages)) {
+		if (StringUtils.isNotBlank(protoBasePackages)) {
 			Collection<String> packages = Arrays.asList(protoBasePackages.split(","));
 			packages.forEach((s) -> {
-				registerProtoTypes(s);
+				registerProtocols(s);
 			});
 		}
 	}
 
 	private void initMessages() {
 		for (ProtoDescriptor descriptor : protosProperties.getDescriptors()) {
-			List<Class<? extends MessageHandler>> handlerClasses = new ArrayList<Class<? extends MessageHandler>>();
-			Collection<String> handlers = Arrays.asList(descriptor.getHandlers().split(","));
-			handlers.forEach((s) -> {
+			Method handler = null;
+			if (StringUtils.isNotBlank(descriptor.getHandler())) {
 				try {
-					@SuppressWarnings("unchecked")
-					Class<? extends MessageHandler> clazz = (Class<? extends MessageHandler>) Class.forName(s);
-					handlerClasses.add(clazz);
-				} catch (ClassNotFoundException e) {
-					logger.error(ExceptionUtils.getStackTrace(e));
+					String handlerFullName = descriptor.getHandler();
+					int index = handlerFullName.lastIndexOf(".");
+					if (index == -1)
+						continue;
+					
+					String className = handlerFullName.substring(0, index);
+					String methodName = handlerFullName.substring(index + 1);
+					
+					Class<?> clazz = Class.forName(className);
+					for (Method m : clazz.getDeclaredMethods()) {
+						if (StringUtils.equals(m.getName(), methodName)) {
+							handler = m;
+							break;
+						}
+					}
+				} catch (Throwable ex) {
+					logger.error(ExceptionUtils.getStackTrace(ex));
 				}
-			});
-			messages.putIfAbsent(descriptor.getCmd(), new MessageDescriptor(descriptor.getFullName(), handlerClasses));
+			}
+			
+			messages.putIfAbsent(descriptor.getCmd(), new MessageDescriptor(descriptor.getFullName(), handler));
 		}
 	}
 
-	private void registerProtoTypes(String protoBasePackage) {
+	private void registerProtocols(String protoBasePackage) {
 		ClassScanner scanner = new ClassScanner(protoBasePackage);
 		Collection<Class<?>> classes = scanner.scan(Message.class);
 		if (classes != null) {
@@ -106,17 +115,20 @@ public class MessageFactory implements InitializingBean {
 				if (method == null)
 					continue;
 
-				protoTypes.putIfAbsent(descriptor.getFullName(), new ProtoType(clazz, method));
+				protoParsers.putIfAbsent(descriptor.getFullName(), method);
 			}
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	public <T extends Message> T newMessage(String protoPkgName, byte[] data) {
-		if (!protoTypes.containsKey(protoPkgName))
+		if (protoPkgName == null)
 			return null;
-
-		Method method = protoTypes.get(protoPkgName).getMethod();
+		
+		Method method = protoParsers.get(protoPkgName);
+		if (method == null)
+			return null;
+		
 		return (T) ReflectionUtils.invokeMethod(method, null, data);
 	}
 
@@ -141,48 +153,26 @@ public class MessageFactory implements InitializingBean {
 		return -1;
 	}
 
-	public Collection<Class<? extends MessageHandler>> getMessageHandlersByCmd(long cmd) {
-		if (!messages.containsKey(cmd))
-			return null;
-
+	public Method getMessageHandlerByCmd(long cmd) {
 		MessageDescriptor descriptor = messages.get(cmd);
-		return Collections.unmodifiableCollection(descriptor.getHandlers());
-	}
-
-	private final static class ProtoType {
-		private final Class<?> clazz;
-		private final Method method;
-
-		public ProtoType(Class<?> clazz, Method method) {
-			this.clazz = clazz;
-			this.method = method;
-		}
-
-		@SuppressWarnings("unused")
-		public Class<?> getClazz() {
-			return clazz;
-		}
-
-		public Method getMethod() {
-			return method;
-		}
+		return (descriptor != null) ? descriptor.getHandler() : null;
 	}
 
 	private final static class MessageDescriptor {
-		private String fullName;
-		private List<Class<? extends MessageHandler>> handlers;
-
-		public MessageDescriptor(String fullName, List<Class<? extends MessageHandler>> handlers) {
+		private final String fullName;
+		private final Method handler;
+		
+		public MessageDescriptor(String fullName, Method handler) {
 			this.fullName = fullName;
-			this.handlers = handlers;
+			this.handler = handler;
 		}
 
 		public String getFullName() {
 			return fullName;
 		}
 
-		public List<Class<? extends MessageHandler>> getHandlers() {
-			return handlers;
+		public Method getHandler() {
+			return handler;
 		}
 	}
 }
