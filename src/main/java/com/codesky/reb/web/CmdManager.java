@@ -19,6 +19,7 @@ import org.springframework.web.servlet.HandlerExecutionChain;
 
 import com.codesky.reb.message.MessageDecoder;
 import com.codesky.reb.message.MessageEncoder;
+import com.codesky.reb.message.MessageFactory;
 import com.codesky.reb.message.struct.DataPacket;
 import com.codesky.reb.message.struct.DataStructOuterClass.DataStruct;
 import com.codesky.reb.utils.SpringUtils;
@@ -38,7 +39,10 @@ public class CmdManager implements InitializingBean {
 	@Autowired
 	private MessageDecoder decoder;
 	
-	protected void registerCommands() {
+	@Autowired
+	private MessageFactory messageFactory;
+	
+	protected void registerMappingCommands() {
 		Map<String, Object> beansMap = SpringUtils.getBeansWithAnnotation(Controller.class);
 		beansMap.forEach((k, v) -> {
 			Method[] methods = v.getClass().getDeclaredMethods();
@@ -72,13 +76,19 @@ public class CmdManager implements InitializingBean {
 	
 	public Object execute(long cmd, Object args) {
 		Method method = cmdMappings.get(cmd);
+		if (method == null) {
+			method = messageFactory.getMessageHandlerByCmd(cmd);
+		}
+		
 		if (method != null) {
 			Object target = SpringUtils.getBean(method.getDeclaringClass());
-			try {
-				return method.invoke(target, args);
-			} catch (Throwable ex) {
-				if (logger.isErrorEnabled()) {
-					logger.error(null, ex);
+			if (target != null) {
+				try {
+					return method.invoke(target, args);
+				} catch (Throwable ex) {
+					if (logger.isErrorEnabled()) {
+						logger.error(null, ex);
+					}
 				}
 			}
 		}
@@ -106,7 +116,7 @@ public class CmdManager implements InitializingBean {
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		registerCommands();
+		registerMappingCommands();
 		registerInterceptors();
 	}
 

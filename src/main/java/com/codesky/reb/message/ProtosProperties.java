@@ -45,7 +45,7 @@ public class ProtosProperties {
 	public final static class ProtoDescriptor {
 		private long cmd;
 		private String fullName;
-		private String handlers;
+		private String handler;
 
 		public long getCmd() {
 			return cmd;
@@ -63,12 +63,12 @@ public class ProtosProperties {
 			this.fullName = fullName;
 		}
 
-		public String getHandlers() {
-			return handlers;
+		public String getHandler() {
+			return handler;
 		}
 
-		public void setHandlers(String handlers) {
-			this.handlers = handlers;
+		public void setHandler(String handler) {
+			this.handler = handler;
 		}
 	}
 
