@@ -122,10 +122,13 @@ public class MessageFactory implements InitializingBean {
 
 	@SuppressWarnings("unchecked")
 	public <T extends Message> T newMessage(String protoPkgName, byte[] data) {
-		Method method = protoParsers.get(protoPkgName);
-		if (method == null) {
+		if (protoPkgName == null)
 			return null;
-		}
+		
+		Method method = protoParsers.get(protoPkgName);
+		if (method == null)
+			return null;
+		
 		return (T) ReflectionUtils.invokeMethod(method, null, data);
 	}
 

@@ -84,7 +84,11 @@ public class CmdManager implements InitializingBean {
 			Object target = SpringUtils.getBean(method.getDeclaringClass());
 			if (target != null) {
 				try {
-					return method.invoke(target, args);
+					if (method.getParameterCount() <= 0) {
+						return method.invoke(target);
+					} else {
+						return method.invoke(target, args);
+					}
 				} catch (Throwable ex) {
 					if (logger.isErrorEnabled()) {
 						logger.error(null, ex);
