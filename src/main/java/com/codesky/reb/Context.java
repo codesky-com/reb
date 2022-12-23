@@ -26,11 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import com.codesky.reb.utils.SpringUtils;
 
 @Component
+@DependsOn("springUtils")
 public class Context {
 
 	private final Logger logger = LoggerFactory.getLogger(Context.class);
